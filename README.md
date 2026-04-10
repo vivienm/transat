@@ -2,6 +2,8 @@
 
 A simple CLI for euro-dollar conversions based on official [European Central Bank](https://www.ecb.europa.eu/) (ECB) exchange rates.
 
+💵✨💶
+
 ## Installation
 
 ```sh
