@@ -50,7 +50,7 @@ fn parse_date(s: &str) -> Result<Date, jiff::Error> {
     jiff::Zoned::now().date().checked_sub(span)
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let args = <Args as clap::Parser>::parse();
     if let Some(shell) = args.completion {
