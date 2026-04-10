@@ -5,11 +5,11 @@ use jiff::civil::Date;
 use tower::Service;
 use url::Url;
 
-use super::models;
-use crate::{
-    ecb::client::{Client, ClientError},
-    money::{Currency, Eur, Rate, Usd},
+use super::{
+    client::{Client, ClientError},
+    models,
 };
+use crate::money::{Currency, Eur, Rate, Usd};
 
 /// A request to the ECB exchange rate API for a given dataset and date range.
 #[derive(Clone, PartialEq, Debug)]
