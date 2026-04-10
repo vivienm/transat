@@ -1,10 +1,10 @@
-#![allow(unused_imports)]
+#![expect(unused_imports)]
 
 mod client;
 mod endpoints;
 mod models;
 
 pub use self::{
-    client::{Client, ClientBuilder, ClientError},
+    client::{Client, ClientError, ClientLayer},
     endpoints::{EurUsd, ExrRequest, ExrResponse},
 };

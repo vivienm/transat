@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use tower::{Service, ServiceExt};
+use tower::{Layer, Service, ServiceExt};
 use url::Url;
 
 const DEFAULT_BASE_URL: &str = "https://data-api.ecb.europa.eu";
@@ -16,15 +16,11 @@ where
     S: Default,
 {
     pub fn new() -> Self {
-        S::default().into()
+        ClientLayer::default().layer(S::default())
     }
 }
 
 impl<S> Client<S> {
-    pub fn builder(service: S) -> ClientBuilder<S> {
-        ClientBuilder::new(service)
-    }
-
     pub async fn execute<R>(
         &self,
         request: R,
@@ -37,24 +33,15 @@ impl<S> Client<S> {
     }
 }
 
-impl<S> From<S> for Client<S> {
-    fn from(service: S) -> Self {
-        Self::builder(service).build()
-    }
-}
-
-#[derive(Debug)]
-pub struct ClientBuilder<S = reqwest::Client> {
-    service: S,
+#[derive(Clone, Debug, Default)]
+pub struct ClientLayer {
     base_url: Option<Arc<Url>>,
 }
 
-impl<S> ClientBuilder<S> {
-    pub fn new(service: S) -> Self {
-        Self {
-            service,
-            base_url: None,
-        }
+impl ClientLayer {
+    #[expect(dead_code)]
+    pub fn new() -> Self {
+        Self::default()
     }
 
     #[expect(dead_code)]
@@ -65,21 +52,17 @@ impl<S> ClientBuilder<S> {
         self.base_url = Some(url.into());
         self
     }
-
-    pub fn build(self) -> Client<S> {
-        let base_url = self.base_url.unwrap_or_else(|| {
-            Arc::new(Url::parse(DEFAULT_BASE_URL).expect("invalid default base URL"))
-        });
-        Client {
-            service: self.service,
-            base_url,
-        }
-    }
 }
 
-impl<S> From<S> for ClientBuilder<S> {
-    fn from(service: S) -> Self {
-        ClientBuilder::new(service)
+impl<S> Layer<S> for ClientLayer {
+    type Service = Client<S>;
+
+    fn layer(&self, service: S) -> Self::Service {
+        let base_url = match &self.base_url {
+            Some(url) => Arc::clone(url),
+            None => Arc::new(Url::parse(DEFAULT_BASE_URL).expect("invalid default URL")),
+        };
+        Client { service, base_url }
     }
 }
 
