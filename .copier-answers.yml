@@ -1,0 +1,17 @@
+# Changes here will be overwritten by Copier. NEVER EDIT MANUALLY.
+
+_commit: 8420ac0
+_src_path: https://github.com/vivienm/copier-rust
+copyright_holder: Vivien Maisonneuve
+copyright_year: 2026
+forge: github
+github_repo: transat
+github_user: vivienm
+license: MIT
+package_name: transat
+project_description: A simple CLI for euro-dollar conversions based on official ECB
+    rates.
+project_name: Transat
+project_type: application
+rust_toolchain: stable
+user_name: Vivien Maisonneuve
