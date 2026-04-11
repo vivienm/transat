@@ -103,13 +103,10 @@ where
     fn call(&mut self, req: ExrRequest<D>) -> Self::Future {
         let mut url = Url::clone(&self.base_url);
 
-        let mut segments = match url.path_segments_mut() {
-            Ok(segments) => segments,
-            Err(()) => {
-                return Box::pin(async {
-                    Err(ClientError::Url(url::ParseError::RelativeUrlWithoutBase))
-                });
-            }
+        let Ok(mut segments) = url.path_segments_mut() else {
+            return Box::pin(async {
+                Err(ClientError::Url(url::ParseError::RelativeUrlWithoutBase))
+            });
         };
         segments.pop_if_empty();
         segments.extend(&["service", "data", "EXR", req.dataset.key()]);
