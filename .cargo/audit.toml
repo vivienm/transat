@@ -1,0 +1,5 @@
+[advisories]
+# rand 0.8.5 is an optional dependency of rust_decimal, not activated by our
+# feature set. It appears in Cargo.lock but is not compiled.
+# See https://github.com/rust-lang/cargo/issues/7494
+ignore = ["RUSTSEC-2026-0097"]
