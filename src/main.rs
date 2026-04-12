@@ -32,14 +32,13 @@ enum CurrencyArg {
     Usd,
 }
 
-fn generate_completions(shell: clap_complete::Shell) -> ! {
+fn generate_completions(shell: clap_complete::Shell) {
     clap_complete::generate(
         shell,
         &mut <Args as clap::CommandFactory>::command(),
         clap::crate_name!(),
         &mut std::io::stdout(),
     );
-    std::process::exit(0);
 }
 
 fn parse_date(s: &str) -> Result<Date, jiff::Error> {
@@ -55,6 +54,7 @@ async fn main() -> anyhow::Result<()> {
     let args = <Args as clap::Parser>::parse();
     if let Some(shell) = args.completion {
         generate_completions(shell);
+        return Ok(());
     }
 
     let today = jiff::Zoned::now().date();
