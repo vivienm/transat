@@ -89,7 +89,8 @@ impl<B, Q> ExrResponse<B, Q> {
 
 impl<S, D> Service<ExrRequest<D>> for Client<S>
 where
-    S: Service<reqwest::Request, Response = reqwest::Response> + 'static,
+    S: Service<reqwest::Request, Response = reqwest::Response>,
+    <S as Service<reqwest::Request>>::Future: 'static,
     D: ExrDataset,
 {
     type Response = ExrResponse<D::Base, D::Quote>;
