@@ -2,7 +2,7 @@ use std::{marker::PhantomData, pin::Pin, task};
 
 use derive_where::derive_where;
 use jiff::civil::Date;
-use tower::Service;
+use tower::{Service, ServiceExt};
 use url::Url;
 
 use super::{
@@ -133,5 +133,23 @@ where
 
             Ok(response)
         })
+    }
+}
+
+impl<S, D> Service<ExrRequest<D>> for &Client<S>
+where
+    S: Service<reqwest::Request, Response = reqwest::Response> + Clone + 'static,
+    D: ExrDataset,
+{
+    type Response = ExrResponse<D::Base, D::Quote>;
+    type Error = ClientError<S>;
+    type Future = tower::util::Oneshot<Client<S>, ExrRequest<D>>;
+
+    fn poll_ready(&mut self, _cx: &mut task::Context<'_>) -> task::Poll<Result<(), Self::Error>> {
+        task::Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, req: ExrRequest<D>) -> Self::Future {
+        Client::clone(self).oneshot(req)
     }
 }
