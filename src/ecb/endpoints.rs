@@ -137,20 +137,20 @@ where
     }
 }
 
-impl<S, D> Service<ExrRequest<D>> for &Client<S>
+impl<R, S> Service<R> for &Client<S>
 where
-    S: Service<reqwest::Request, Response = reqwest::Response> + Clone + 'static,
-    D: ExrDataset,
+    Client<S>: Service<R>,
+    S: Clone,
 {
-    type Response = ExrResponse<D::Base, D::Quote>;
-    type Error = ClientError<S>;
-    type Future = tower::util::Oneshot<Client<S>, ExrRequest<D>>;
+    type Response = <Client<S> as Service<R>>::Response;
+    type Error = <Client<S> as Service<R>>::Error;
+    type Future = tower::util::Oneshot<Client<S>, R>;
 
     fn poll_ready(&mut self, _cx: &mut task::Context<'_>) -> task::Poll<Result<(), Self::Error>> {
         task::Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, req: ExrRequest<D>) -> Self::Future {
-        Client::clone(self).oneshot(req)
+    fn call(&mut self, req: R) -> Self::Future {
+        self.clone().oneshot(req)
     }
 }
