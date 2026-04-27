@@ -18,6 +18,9 @@ struct Args {
     /// The date for which to fetch the exchange rate.
     #[arg(short, long, value_parser = parse_date)]
     date: Option<Date>,
+    /// How far back to look for a rate if none is published on the target date.
+    #[arg(short, long, value_parser = parse_lookback, default_value = "7 days")]
+    lookback: Span,
     /// The amount to convert.
     #[arg(required = true)]
     amount: Option<Decimal>,
@@ -49,6 +52,16 @@ fn parse_date(s: &str) -> Result<Date, jiff::Error> {
     jiff::Zoned::now().date().checked_sub(span)
 }
 
+fn parse_lookback(s: &str) -> anyhow::Result<Span> {
+    let relative = jiff::Zoned::now();
+    let span = s.parse::<Span>()?.abs();
+    let days = span.total((jiff::Unit::Day, &relative))?;
+    if days.fract() != 0.0 {
+        anyhow::bail!("lookback must be a whole number of days");
+    }
+    Ok(span)
+}
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let args = <Args as clap::Parser>::parse();
@@ -68,7 +81,7 @@ async fn main() -> anyhow::Result<()> {
     let response = client
         .execute(ExrRequest::new(
             EurUsd::Daily,
-            date.saturating_sub(Span::new().days(7)),
+            date.saturating_sub(args.lookback),
             date,
         ))
         .await?;
