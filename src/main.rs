@@ -49,7 +49,7 @@ fn parse_date(s: &str) -> Result<Date, jiff::Error> {
         return Ok(date);
     }
     let span = s.parse::<jiff::Span>()?.abs();
-    jiff::Zoned::now().date().checked_sub(span)
+    jiff::Zoned::now().in_tz("Europe/Berlin")?.date().checked_sub(span)
 }
 
 fn parse_lookback(s: &str) -> anyhow::Result<Span> {
@@ -70,7 +70,10 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let today = jiff::Zoned::now().date();
+    // Anchor "today" on the ECB's timezone so users west of CET don't miss
+    // the latest published rate, and users east don't request a date that
+    // hasn't been reached at the ECB yet.
+    let today = jiff::Zoned::now().in_tz("Europe/Berlin")?.date();
     let date = args.date.unwrap_or(today);
     anyhow::ensure!(date <= today, "date {date} is in the future");
 
