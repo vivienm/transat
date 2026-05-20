@@ -22,10 +22,10 @@ struct Args {
     #[arg(short, long, value_parser = parse_lookback, default_value = "7 days")]
     lookback: Span,
     /// The amount to convert.
-    #[arg(required_unless_present = "SHELL")]
+    #[arg(requires = "currency")]
     amount: Option<Decimal>,
     /// The source currency.
-    #[arg(required_unless_present = "SHELL", ignore_case = true)]
+    #[arg(requires = "amount", ignore_case = true)]
     currency: Option<CurrencyArg>,
 }
 
@@ -74,9 +74,6 @@ async fn main() -> anyhow::Result<()> {
     let date = args.date.unwrap_or(today);
     anyhow::ensure!(date <= today, "date {date} is in the future");
 
-    let value = args.amount.unwrap();
-    let currency = args.currency.unwrap();
-
     let client: ecb::Client = ecb::Client::new();
     let response = client
         .execute(ExrRequest::new(
@@ -90,11 +87,20 @@ async fn main() -> anyhow::Result<()> {
         .find_rate(date)
         .ok_or_else(|| anyhow::anyhow!("no exchange rate available for {date}"))?;
 
-    match currency {
-        CurrencyArg::Eur => print!("{}", Amount::<Eur>::new(value).convert(&rate)),
-        CurrencyArg::Usd => print!("{}", Amount::<Usd>::new(value).convert(&rate.invert())),
-    };
-    println!(" ({} on {})", rate, rate.date());
+    match (args.amount, args.currency) {
+        (Some(value), Some(CurrencyArg::Eur)) => {
+            println!("{} ({})", Amount::<Eur>::new(value).convert(&rate), rate);
+        }
+        (Some(value), Some(CurrencyArg::Usd)) => {
+            println!(
+                "{} ({})",
+                Amount::<Usd>::new(value).convert(&rate.invert()),
+                rate,
+            );
+        }
+        (None, None) => println!("{}", rate),
+        _ => unreachable!("clap enforces amount and currency together"),
+    }
 
     Ok(())
 }

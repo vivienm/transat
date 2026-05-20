@@ -12,6 +12,12 @@ cargo install --git https://github.com/vivienm/transat
 
 ## Usage
 
+Display today's exchange rate:
+
+```sh
+transat
+```
+
 Convert 100 EUR to USD using today's rate:
 
 ```sh

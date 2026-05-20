@@ -115,10 +115,11 @@ where
         let precision = f.precision().unwrap_or(DEFAULT_PRECISION);
         write!(
             f,
-            "{}/{} = {:.prec$}",
+            "{}/{} = {:.prec$} on {}",
             B::LABEL,
             Q::LABEL,
             self.value,
+            self.date,
             prec = precision
         )
     }
