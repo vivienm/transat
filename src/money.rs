@@ -70,7 +70,7 @@ where
     C: Currency,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let precision = f.precision().unwrap_or(DEFAULT_PRECISION);
+        let precision = f.precision().unwrap_or(DEFAULT_AMOUNT_PRECISION);
         write!(f, "{:.prec$} {}", self.value, C::LABEL, prec = precision)
     }
 }
@@ -113,7 +113,7 @@ where
     Q: Currency,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let precision = f.precision().unwrap_or(DEFAULT_PRECISION);
+        let precision = f.precision().unwrap_or(DEFAULT_RATE_PRECISION);
         write!(
             f,
             "{}/{} = {:.prec$} on {}",
@@ -126,4 +126,5 @@ where
     }
 }
 
-const DEFAULT_PRECISION: usize = 4;
+const DEFAULT_AMOUNT_PRECISION: usize = 2;
+const DEFAULT_RATE_PRECISION: usize = 4;
