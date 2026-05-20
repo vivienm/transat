@@ -3,7 +3,11 @@ mod money;
 
 use std::str::FromStr;
 
-use jiff::{Span, civil::Date};
+use jiff::{
+    Span,
+    civil::Date,
+    fmt::friendly::{Designator, Spacing, SpanPrinter},
+};
 use rust_decimal::Decimal;
 
 use crate::{
@@ -111,9 +115,12 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     let rate = response.find_rate(date).ok_or_else(|| {
+        let printer = SpanPrinter::new()
+            .designator(Designator::Verbose)
+            .spacing(Spacing::BetweenUnitsAndDesignators);
         anyhow::anyhow!(
-            "no exchange rate found for {date} within the last {lookback}",
-            lookback = args.lookback,
+            "no exchange rate found for {date} within the last {}",
+            printer.span_to_string(&args.lookback),
         )
     })?;
 
