@@ -114,19 +114,21 @@ async fn main() -> anyhow::Result<()> {
         .find_rate(date)
         .ok_or_else(|| anyhow::anyhow!("no exchange rate available for {date}"))?;
 
-    match (args.amount, args.currency) {
-        (Some(value), Some(CurrencyArg::Eur)) => {
-            println!("{} ({})", Amount::<Eur>::new(value).convert(&rate), rate);
+    if let Some((value, currency)) = args.amount.zip(args.currency) {
+        match currency {
+            CurrencyArg::Eur => {
+                println!("{} ({})", Amount::<Eur>::new(value).convert(&rate), rate);
+            }
+            CurrencyArg::Usd => {
+                println!(
+                    "{} ({})",
+                    Amount::<Usd>::new(value).convert(&rate.invert()),
+                    rate,
+                );
+            }
         }
-        (Some(value), Some(CurrencyArg::Usd)) => {
-            println!(
-                "{} ({})",
-                Amount::<Usd>::new(value).convert(&rate.invert()),
-                rate,
-            );
-        }
-        (None, None) => println!("{}", rate),
-        _ => unreachable!("clap enforces amount and currency together"),
+    } else {
+        println!("{rate}");
     }
 
     Ok(())
