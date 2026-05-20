@@ -17,7 +17,7 @@ struct Args {
     /// Generate the completion script for the specified shell.
     #[arg(long, exclusive = true, name = "SHELL")]
     completion: Option<clap_complete::Shell>,
-    /// The date for which to fetch the exchange rate.
+    /// The conversion date; the latest published rate on or before this date is used.
     #[arg(short, long)]
     date: Option<DateArg>,
     /// How far back to look for a rate if none is published on the target date.
