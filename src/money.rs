@@ -100,9 +100,10 @@ impl<B, Q> Rate<B, Q> {
         self.value
     }
 
-    /// Returns the inverse rate (e.g. EUR/USD -> USD/EUR).
-    pub fn invert(&self) -> Rate<Q, B> {
-        Rate::new(self.date, Decimal::ONE / self.value)
+    /// Returns the inverse rate (e.g. EUR/USD -> USD/EUR), or `None` if the
+    /// rate is zero.
+    pub fn invert(&self) -> Option<Rate<Q, B>> {
+        (!self.value.is_zero()).then(|| Rate::new(self.date, Decimal::ONE / self.value))
     }
 }
 

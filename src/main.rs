@@ -130,11 +130,10 @@ async fn main() -> anyhow::Result<()> {
                 println!("{} ({})", Amount::<Eur>::new(value).convert(&rate), rate);
             }
             CurrencyArg::Usd => {
-                println!(
-                    "{} ({})",
-                    Amount::<Usd>::new(value).convert(&rate.invert()),
-                    rate,
-                );
+                let inverse = rate
+                    .invert()
+                    .ok_or_else(|| anyhow::anyhow!("cannot invert a zero {rate}"))?;
+                println!("{} ({})", Amount::<Usd>::new(value).convert(&inverse), rate);
             }
         }
     } else {
