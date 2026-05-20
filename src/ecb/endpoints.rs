@@ -55,14 +55,17 @@ impl ExrDataset for EurUsd {
 }
 
 /// A typed wrapper around the raw ECB exchange rate response.
+///
+/// `model` is `None` when the API returned an empty body, which the ECB does
+/// for windows containing no observations (e.g. a single weekend day).
 #[derive_where(Debug)]
 pub struct ExrResponse<B, Q> {
-    model: models::ExrResponse,
+    model: Option<models::ExrResponse>,
     _phantom: PhantomData<(B, Q)>,
 }
 
 impl<B, Q> ExrResponse<B, Q> {
-    fn new(model: models::ExrResponse) -> Self {
+    fn new(model: Option<models::ExrResponse>) -> Self {
         Self {
             model,
             _phantom: PhantomData,
@@ -72,8 +75,9 @@ impl<B, Q> ExrResponse<B, Q> {
     /// Finds the exchange rate for `date`, or the closest preceding date
     /// if unavailable (e.g. weekends or holidays).
     pub fn find_rate(&self, date: Date) -> Option<Rate<B, Q>> {
-        let dimension = &self.model.structure.dimensions.observation[0];
-        let series = self.model.data_sets[0].series.values().next()?;
+        let model = self.model.as_ref()?;
+        let dimension = &model.structure.dimensions.observation[0];
+        let series = model.data_sets[0].series.values().next()?;
 
         series
             .observations
@@ -122,17 +126,23 @@ where
         let response_fut = self.service.call(request);
 
         Box::pin(async move {
-            let response = response_fut
+            let body = response_fut
                 .await
                 .map_err(ClientError::Service)?
                 .error_for_status()
                 .map_err(ClientError::Response)?
-                .json()
+                .bytes()
                 .await
-                .map(ExrResponse::new)
                 .map_err(ClientError::Response)?;
 
-            Ok(response)
+            // The ECB API returns an empty body (HTTP 200) for windows with
+            // no observations, e.g. a single weekend day.
+            let model = (!body.is_empty())
+                .then(|| serde_json::from_slice(&body))
+                .transpose()
+                .map_err(ClientError::Decode)?;
+
+            Ok(ExrResponse::new(model))
         })
     }
 }

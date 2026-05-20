@@ -75,4 +75,5 @@ where
     Url(url::ParseError),
     Service(S::Error),
     Response(reqwest::Error),
+    Decode(serde_json::Error),
 }
