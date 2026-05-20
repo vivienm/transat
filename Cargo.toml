@@ -2,7 +2,7 @@
 name = "transat"
 version = "0.1.0"
 edition = "2024"
-description = "A simple CLI for euro-dollar conversions based on official ECB rates."
+description = "A simple CLI for euro-dollar conversions based on official ECB rates"
 repository = "https://github.com/vivienm/transat"
 license = "MIT"
 publish = false

@@ -22,10 +22,10 @@ struct Args {
     #[arg(short, long, value_parser = parse_lookback, default_value = "7 days")]
     lookback: Span,
     /// The amount to convert.
-    #[arg(required = true)]
+    #[arg(required_unless_present = "SHELL")]
     amount: Option<Decimal>,
     /// The source currency.
-    #[arg(required = true, ignore_case = true)]
+    #[arg(required_unless_present = "SHELL", ignore_case = true)]
     currency: Option<CurrencyArg>,
 }
 
