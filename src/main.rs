@@ -110,9 +110,12 @@ async fn main() -> anyhow::Result<()> {
         ))
         .await?;
 
-    let rate = response
-        .find_rate(date)
-        .ok_or_else(|| anyhow::anyhow!("no exchange rate available for {date}"))?;
+    let rate = response.find_rate(date).ok_or_else(|| {
+        anyhow::anyhow!(
+            "no exchange rate found for {date} within the last {lookback}",
+            lookback = args.lookback,
+        )
+    })?;
 
     if let Some((value, currency)) = args.amount.zip(args.currency) {
         match currency {
