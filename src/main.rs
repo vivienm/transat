@@ -1,6 +1,8 @@
 mod ecb;
 mod money;
 
+use std::str::FromStr;
+
 use jiff::{Span, civil::Date};
 use rust_decimal::Decimal;
 
@@ -16,8 +18,8 @@ struct Args {
     #[arg(long, exclusive = true, name = "SHELL")]
     completion: Option<clap_complete::Shell>,
     /// The date for which to fetch the exchange rate.
-    #[arg(short, long, value_parser = parse_date)]
-    date: Option<Date>,
+    #[arg(short, long)]
+    date: Option<DateArg>,
     /// How far back to look for a rate if none is published on the target date.
     #[arg(short, long, value_parser = parse_lookback, default_value = "7 days")]
     lookback: Span,
@@ -27,6 +29,33 @@ struct Args {
     /// The source currency.
     #[arg(requires = "amount", ignore_case = true)]
     currency: Option<CurrencyArg>,
+}
+
+/// A date argument: either absolute, or relative to "today".
+#[derive(Clone, Debug)]
+enum DateArg {
+    Absolute(Date),
+    Ago(Span),
+}
+
+impl DateArg {
+    fn resolve(&self, today: Date) -> Result<Date, jiff::Error> {
+        match self {
+            Self::Absolute(d) => Ok(*d),
+            Self::Ago(span) => today.checked_sub(*span),
+        }
+    }
+}
+
+impl FromStr for DateArg {
+    type Err = jiff::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(date) = s.parse::<Date>() {
+            return Ok(Self::Absolute(date));
+        }
+        Ok(Self::Ago(s.parse::<Span>()?.abs()))
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, clap::ValueEnum)]
@@ -44,18 +73,12 @@ fn generate_completions(shell: clap_complete::Shell) {
     );
 }
 
-fn parse_date(s: &str) -> Result<Date, jiff::Error> {
-    if let Ok(date) = s.parse::<Date>() {
-        return Ok(date);
-    }
-    let span = s.parse::<jiff::Span>()?.abs();
-    jiff::Zoned::now().in_tz("Europe/Berlin")?.date().checked_sub(span)
-}
-
 fn parse_lookback(s: &str) -> anyhow::Result<Span> {
-    let relative = jiff::Zoned::now();
+    // The reference date is only needed so jiff can resolve calendar units
+    // (months/years) into days; any fixed date works for our validation.
+    let relative = Date::constant(2000, 1, 1);
     let span = s.parse::<Span>()?.abs();
-    let days = span.total((jiff::Unit::Day, &relative))?;
+    let days = span.total((jiff::Unit::Day, relative))?;
     if days.fract() != 0.0 {
         anyhow::bail!("lookback must be a whole number of days");
     }
@@ -74,7 +97,11 @@ async fn main() -> anyhow::Result<()> {
     // the latest published rate, and users east don't request a date that
     // hasn't been reached at the ECB yet.
     let today = jiff::Zoned::now().in_tz("Europe/Berlin")?.date();
-    let date = args.date.unwrap_or(today);
+    let date = args
+        .date
+        .map(|d| d.resolve(today))
+        .transpose()?
+        .unwrap_or(today);
     anyhow::ensure!(date <= today, "date {date} is in the future");
 
     let client: ecb::Client = ecb::Client::new();
