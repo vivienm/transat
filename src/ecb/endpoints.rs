@@ -94,12 +94,13 @@ impl<B, Q> ExrResponse<B, Q> {
 impl<S, D> Service<ExrRequest<D>> for Client<S>
 where
     S: Service<reqwest::Request, Response = reqwest::Response>,
-    <S as Service<reqwest::Request>>::Future: 'static,
+    <S as Service<reqwest::Request>>::Future: Send + 'static,
+    <S as Service<reqwest::Request>>::Error: Send,
     D: ExrDataset,
 {
     type Response = ExrResponse<D::Base, D::Quote>;
     type Error = ClientError<S>;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
     fn poll_ready(&mut self, cx: &mut task::Context<'_>) -> task::Poll<Result<(), Self::Error>> {
         self.service.poll_ready(cx).map_err(ClientError::Service)
