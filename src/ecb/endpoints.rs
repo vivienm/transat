@@ -106,7 +106,7 @@ where
     }
 
     fn call(&mut self, req: ExrRequest<D>) -> Self::Future {
-        let mut url = Url::clone(&self.base_url);
+        let mut url = (*self.base_url).clone();
 
         let Ok(mut segments) = url.path_segments_mut() else {
             return Box::pin(async {
