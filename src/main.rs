@@ -93,10 +93,7 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    // Anchor "today" on the ECB's timezone so users west of CET don't miss
-    // the latest published rate, and users east don't request a date that
-    // hasn't been reached at the ECB yet.
-    let today = jiff::Zoned::now().in_tz("Europe/Berlin")?.date();
+    let today = ecb::today()?;
     let date = args
         .date
         .map(|d| d.resolve(today))
